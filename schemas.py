@@ -1,48 +1,102 @@
 """
-Database Schemas
+Database Schemas for MagicFix Pro
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model represents a MongoDB collection. Collection name is the lowercase class name.
 """
+from __future__ import annotations
+from pydantic import BaseModel, Field, EmailStr
+from typing import Optional, List, Literal
+from datetime import datetime
 
-from pydantic import BaseModel, Field
-from typing import Optional
-
-# Example schemas (replace with your own):
+Role = Literal["customer", "engineer", "admin"]
+JobStatus = Literal[
+    "requested",
+    "matched",
+    "accepted",
+    "en_route",
+    "in_progress",
+    "completed",
+    "paid",
+    "reviewed",
+]
+CallDirection = Literal["customer_to_engineer", "engineer_to_customer"]
+PaymentProvider = Literal["paystack", "stripe"]
 
 class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    name: str
+    email: EmailStr
+    phone: Optional[str] = None
+    role: Role = "customer"
+    password_hash: str
+    is_verified: bool = False
+    avatar_url: Optional[str] = None
+    rating_avg: float = 0.0
+    rating_count: int = 0
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+class EngineerProfile(BaseModel):
+    user_id: str
+    skills: List[str] = []
+    bio: Optional[str] = None
+    certifications: List[str] = []
+    id_docs: List[str] = []
+    is_approved: bool = False
+    availability: List[str] = []  # e.g., ["mon-morning", "tue-afternoon"]
+    location: Optional[str] = None
 
-# Add your own schemas here:
-# --------------------------------------------------
+class ServiceCategory(BaseModel):
+    key: str
+    name: str
+    icon: Optional[str] = None
+    active: bool = True
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Job(BaseModel):
+    customer_id: str
+    engineer_id: Optional[str] = None
+    category_key: str
+    description: str
+    photos: List[str] = []
+    location_text: Optional[str] = None
+    status: JobStatus = "requested"
+    price_estimate: Optional[float] = None
+    rating: Optional[int] = None
+    review: Optional[str] = None
+
+class Message(BaseModel):
+    job_id: str
+    sender_id: str
+    receiver_id: str
+    text: Optional[str] = None
+    image_url: Optional[str] = None
+    audio_url: Optional[str] = None
+    seen: bool = False
+
+class CallLog(BaseModel):
+    job_id: str
+    caller_id: str
+    callee_id: str
+    direction: CallDirection
+    room_id: str
+    started_at: Optional[datetime] = None
+    ended_at: Optional[datetime] = None
+    duration_sec: Optional[int] = None
+    accepted: bool = False
+    network_quality: Optional[str] = None
+
+class Payment(BaseModel):
+    job_id: str
+    customer_id: str
+    engineer_id: str
+    amount: float
+    currency: str = "NGN"
+    provider: PaymentProvider = "paystack"
+    provider_ref: Optional[str] = None
+    status: Literal["init", "succeeded", "failed"] = "init"
+    commission: float = 0.15  # 15%
+
+class Notification(BaseModel):
+    user_id: str
+    title: str
+    body: str
+    type: str
+    data: Optional[dict] = None
+    seen: bool = False
