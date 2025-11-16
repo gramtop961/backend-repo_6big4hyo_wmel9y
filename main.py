@@ -22,14 +22,14 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 app = FastAPI(title="MagicFix Pro API", version="0.1.0")
 
-# CORS: allow local dev and the Modal preview domains
+# CORS: allow local dev and the Modal preview domains (both http and https just in case)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
         "https://localhost:3000",
     ],
-    allow_origin_regex=r"https://.*modal\.(host|run)$",
+    allow_origin_regex=r"https?://.*modal\.(host|run)$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
